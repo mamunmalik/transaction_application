@@ -7,59 +7,43 @@ use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+
+    public function getMockRespnses(Request $request)
     {
-        //
+        if ($request->header("X-Mock-Status")) {
+            $value = $request->header("X-Mock-Status");
+            if ($value == "accepted") {
+                return response()->json(['status' => "accepted"]);
+            } elseif ($value == "failed") {
+                return response()->json(['status' => "failed"]);
+            }
+        }
+
+        return response()->json(['status' => "failed"]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function createPayment(Request $request)
     {
-        //
+        $response = $this->getMockRespnses($request);
+        try {
+            $validated = $request->validate([
+                'amount' => ['required'],
+                'user_id' => ['required']
+            ]);
+            $item = Transaction::create($validated);
+            return response()->json(['transaction_id' => $item->id], 201);
+        } catch (\Throwable $th) {
+            return response()->json([$th->getMessage()], 422);
+        }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function updatePayment(Request $request)
     {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Transaction $transaction)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Transaction $transaction)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Transaction $transaction)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Transaction $transaction)
-    {
-        //
+        $request->validate([
+            'transaction_id' => ['required'],
+            'status' => ['required']
+        ]);
+        $item = Transaction::find($request->transaction_id);
+        $item->update(['status' => $request->status]);
     }
 }
