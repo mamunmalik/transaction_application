@@ -25,11 +25,13 @@ class TransactionController extends Controller
     public function createPayment(Request $request)
     {
         $response = $this->getMockRespnses($request);
+        $status = $response->getData()->status;
         try {
             $validated = $request->validate([
                 'amount' => ['required'],
-                'user_id' => ['required']
+                'user_id' => ['required'],
             ]);
+            $validated['status'] = $status;
             $item = Transaction::create($validated);
             return response()->json(['transaction_id' => $item->id], 201);
         } catch (\Throwable $th) {
